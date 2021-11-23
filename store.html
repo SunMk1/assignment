@@ -23,31 +23,44 @@
         * {
             margin: 0;
             padding: 0;
+            list-style:none;
         }
+        body{ -ms-overflow-style: none;
+        }
+        ::-webkit-scrollbar { display: none; }
+
+
         .menuDiv {
-            background-color: cornsilk;
             width: 65vw;
             overflow: auto;
-            scrollbar-width: none;
         }
         .orderDiv {
-            background-color: skyblue;
             width: 25vw;
+            border-left: 3px solid black;
         }
         .mt-4 {
             display: flex;
             justify-content: center;
-        }
-        .navbar {
-            height: 10vh;
         }
         .lDiv {
             width: 220px;
             float: left;
         }
         .mDiv {
-            width: 300px;
-            height: 200px;
+            clear:both;
+            width: 220px;
+            height: 300px;
+        }
+        .modal {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.1);
+            top: 0; left: 0;
+            display: none;
+        }
+        .pay{
+            width: 25vw;
+            height: 50px;
         }
     </style>
 
@@ -75,37 +88,131 @@
             </div>
             <div class="orderDiv">
                 <h1>ORDER</h1>
+                <div class="orderList">
+
+                </div>
+                <button class="pay btn-danger">PAY</button>
+            </div>
+            <div class="modal" tabindex="-1" id="exampleModal">
+                <div class="modal-dialog modal-dialog-centered">
+
+                </div>
             </div>
         </div>
-    </div>
-    </div>
-    </div>
     <!-- Bootstrap core JS-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"></script>
         <!-- Core theme JS-->
         <script src="js/scripts.js"></script>
+
 <script>
     $(document).ready(function (){
-        const menu = []
+        let menuArr = []
+        let order = []
         $(".list-group").on("click","a",function (e){
             e.preventDefault()
             e.stopPropagation()
             const url = $(e.target).data("url")
 
             $.getJSON(url,function (menu){
+                menuArr = menu
                 let str = ''
                 for (let i = 0; i < menu.length; i++) {
                     const menus = menu[i]
-                    str += `<li class="lDiv" data-idx=${i}>
-                                <div class="mDiv">
-                                    <img src=${menus.img}>
-                                    <div>${menus.name}</div>
-                                    <div>${menus.price}</div>
+                    str += `<li class="lDiv" >
+                                <div class="mDiv" >
+                                    <div class="dataDiv" data-idx=${i}>
+                                        <img src=${menus.img}>
+                                        <div>${menus.name}</div>
+                                        <div>${menus.price}</div>
+                                    </div>
                                 </div>
                             </li>`
                 }
                 $(".menuList").html(str)
+                const myModal = new bootstrap.Modal(document.querySelector('#exampleModal'))
+                $(".mDiv").on("click",function (e){
+                    e.stopPropagation()
+                    e.preventDefault()
+                    const menuIdx = $(e.target).closest('.dataDiv').data("idx")
+                    const menuImg = menuArr[menuIdx].img
+                    console.log(menuIdx)
+                    let count = 0
+                    let modals = `<div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <img src=${menuImg}><div>${menuArr[menuIdx].name}<div>${menuArr[menuIdx].price}</div></div>
+                                        <div class="modal-footer">
+                                            <div class="cntDiv">
+                                                <div class="plus">+</div>
+                                                <div class="cntBox">${count}</div>
+                                                <div class="minus">-</div>
+                                            </div>
+                                            <button type="button" class="close btn-secondary" data-bs-dismiss="modal">닫기</button>
+                                            <button type="button" class="minus btn-secondary">취소</button>
+                                            <button type="button" class="add btn-primary">추가</button>
+                                        </div>
+                                    </div>
+                                </div>`
+                    $(".modal-dialog").html(modals)
+                    myModal.show()
+
+                    $(".add").on("click",function (e){
+                        count++
+                        let countTxt = `<div class="cntBox">${count}</div>`
+                        $(".cntBox").html(countTxt)
+                    })
+                    $(".minus").on("click", function (e){
+                        count--
+                        let countTxt = `<div class="cntBox">${count}</div>`
+                        $(".cntBox").html(countTxt)
+                    })
+                    //CART
+                    let sum = 0
+                    $(".add").on("click",function (e){
+                        e.preventDefault()
+                        e.stopPropagation()
+                        const menuAdd = menuArr[menuIdx]
+
+                        if (count===0){
+                            return
+                        } else {
+                            order.push({...menuAdd, qty : count})
+                        }
+
+                        let orderStr = ''
+                        for (let i = 0; i < order.length; i++) {
+                            const orders = order[i]
+                            orderStr += `<li class="orDiv" data-idx=${i}>
+                                             <div class="product">${orders.name} : ${orders.price}원</div>
+                                             <div class="qty">${orders.qty}</div>
+                                         </li>`
+                            sum += orders.qty * orders.price
+                            console.log(orderStr)
+                        }
+                        $(".orderList").html(orderStr)
+                        myModal.hide()
+                    })
+                })
             })
+        })
+        $(".pay").on("click",function (){
+            e.preventDefault()
+            e.stopPropagation()
+            $(".modal-dialog").html("<div class=\'modal-content\'>\n" +
+                "<div class=\'modal-header\'>\n" +
+                "<h5 class=\'modal-title'\>Juice</h5>" +
+                    "<button type=\'button\' className=\'btn-close\' data-bs-dismiss=\'modal\' aria-label=\'Close\'></button>" +
+                "</div>\n"+
+                "<div class=\'modal-body\'>\n"+
+                "<h5>PAYYY</h5>\n" +
+                "</div>\n" +
+                    "<button type=\'button\' class=\'minus btn-secondary\'>취소</button>\n"+
+                    "<button type=\'button\' class=\'add btn-primary\'>결제</button>\n"+
+            "</div>)\n"+
+            "</div>")
+            myModal.show()
         })
     })
 </script>
